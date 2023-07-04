@@ -1,9 +1,10 @@
 import json
 from flask import Flask, jsonify, request
-
+from flask_cors import CORS
 DISHES_FILE = 'dishes.json'
 ORDERS_FILE = 'orders.json'
 app = Flask(__name__)
+CORS(app)
 app.secret_key = 'Kirti@1807'
 
 def load_data(file_name):

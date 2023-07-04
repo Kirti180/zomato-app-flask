@@ -61,5 +61,27 @@
         ],
         "id": 6,
         "total_price": 11.98
+    },
+    {
+        "customer_name": "kittu",
+        "items": [
+            {
+                "dish_id": 1,
+                "quantity": 2
+            }
+        ],
+        "id": 9,
+        "total_price": 21.98
+    },
+    {
+        "customer_name": "kittu",
+        "items": [
+            {
+                "dish_id": 2,
+                "quantity": 2
+            }
+        ],
+        "id": 10,
+        "total_price": 11.98
     }
 ]
