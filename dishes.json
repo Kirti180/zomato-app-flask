@@ -16,5 +16,13 @@
         "name": "Pasta",
         "price": 8.99,
         "availability": true
+    },
+    {
+        "id": 15,
+        "name": "biryani",
+        "price": "120",
+        "availability": true,
+        "rating": 0,
+        "reviews": []
     }
 ]

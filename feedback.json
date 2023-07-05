@@ -1,0 +1,18 @@
+[
+    {
+      "dish_id": 1,
+      "rating": 4,
+      "review": "Great dish! Loved the flavors."
+    },
+    {
+      "dish_id": 2,
+      "rating": 5,
+      "review": "Absolutely delicious. Highly recommended."
+    },
+    {
+      "dish_id": 1,
+      "rating": 3,
+      "review": "Decent dish, but could use some improvement."
+    }
+  ]
+  

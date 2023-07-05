@@ -83,5 +83,40 @@
         ],
         "id": 10,
         "total_price": 11.98
+    },
+    {
+        "customer_name": "kirti",
+        "items": [
+            {
+                "dish_id": 2,
+                "quantity": 2
+            }
+        ],
+        "id": 11,
+        "total_price": 11.98
+    },
+    {
+        "customer_name": "kittu",
+        "items": [
+            {
+                "dish_id": 2,
+                "quantity": 2
+            }
+        ],
+        "id": 13,
+        "status": "received",
+        "total_price": 11.98
+    },
+    {
+        "customer_name": "kkk",
+        "items": [
+            {
+                "dish_id": 3,
+                "quantity": 2
+            }
+        ],
+        "id": 14,
+        "status": "received",
+        "total_price": 17.98
     }
 ]

@@ -1,11 +1,16 @@
 import json
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_socketio import SocketIO
+
 DISHES_FILE = 'dishes.json'
 ORDERS_FILE = 'orders.json'
+FEEDBACK_FILE = 'feedback.json'
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'Kirti@1807'
+socketio = SocketIO(app)
 
 def load_data(file_name):
     try:
@@ -21,6 +26,8 @@ def save_data(data, file_name):
 
 dishes = load_data(DISHES_FILE)
 orders = load_data(ORDERS_FILE)
+feedback = load_data(FEEDBACK_FILE)
+
 order_id_counter = max(order['id'] for order in orders if 'id' in order) if orders else 0
 
 def get_next_order_id():
@@ -49,7 +56,9 @@ def create_dish():
         'id': get_next_order_id(),
         'name': request.json['name'],
         'price': request.json['price'],
-        'availability': bool(request.json['availability'])
+        'availability': bool(request.json['availability']),
+        'rating': 0,
+        'reviews': []
     }
     dishes.append(new_dish)
     save_data(dishes, DISHES_FILE)
@@ -87,6 +96,9 @@ def create_order():
         order_id = get_next_order_id()
         data['id'] = order_id
 
+        # Set the default status to "received"
+        data['status'] = 'received'
+
         # Calculate total price for the order
         total_price = 0
         for item in data['items']:
@@ -106,6 +118,7 @@ def create_order():
     except Exception as e:
         return jsonify({'error': 'Internal Server Error'})
 
+
 @app.route('/orders/<int:order_id>', methods=['PUT'])
 def update_order(order_id):
     new_status = request.json.get('status', '')
@@ -113,6 +126,10 @@ def update_order(order_id):
     if order:
         order['status'] = new_status
         save_data(orders, ORDERS_FILE)
+
+        # Emit a status update event to the clients
+        socketio.emit('order_status_update', {'order_id': order_id, 'status': new_status}, namespace='/status_updates')
+
         return jsonify(order)
     else:
         return jsonify({'error': 'Order not found'}), 404
@@ -134,5 +151,13 @@ def get_orders():
     except Exception as e:
         return jsonify({'error': 'Internal Server Error'})
 
+@socketio.on('connect', namespace='/status_updates')
+def handle_status_update_connection():
+    print('Client connected')
+
+@socketio.on('disconnect', namespace='/status_updates')
+def handle_status_update_disconnection():
+    print('Client disconnected')
+
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    socketio.run(app, port=5000, debug=True)

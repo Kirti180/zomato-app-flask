@@ -61,7 +61,8 @@
                     <th>Order ID</th>
                     <th>Customer Name</th>
                     <th>Order Total</th>
-                    <!-- <th>Order Status</th> -->
+                    <th>Order Status</th>
+                    <th>Change Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -85,7 +86,8 @@ function fetchOrders() {
                     <td>${order.id}</td>
                     <td>${order.customer_name}</td>
                     <td>${order.total_price}</td>
-                    
+                    <td>${order.status}</td>
+                    <td><button>Update Status</button></td>
                 `;
                 tableBody.appendChild(row);
             });
