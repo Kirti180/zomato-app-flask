@@ -1,78 +1,103 @@
 import json
+import pymongo
+from json import dumps
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_socketio import SocketIO
-
-DISHES_FILE = 'dishes.json'
-ORDERS_FILE = 'orders.json'
-FEEDBACK_FILE = 'feedback.json'
+from pymongo import MongoClient
+from bson import json_util
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'Kirti@1807'
-socketio = SocketIO(app)
 
-def load_data(file_name):
-    try:
-        with open(file_name, 'r') as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    return data
+# MongoDB configuration
+cluster0 = MongoClient('mongodb+srv://kirti:kirti@cluster0.xxyu7.mongodb.net/?retryWrites=true&w=majority')
+db = cluster['zomato']
+collection = db['dishes']
+collection = db['orders']
 
-def save_data(data, file_name):
-    with open(file_name, 'w') as file:
-        json.dump(data, file, indent=4)
+# Schema definitions
+dishes_schema = {
+    'id': {'type': 'int'},
+    'name': {'type': 'string'},
+    'price': {'type': 'float'},
+    'availability': {'type': 'bool'},
+    'rating': {'type': 'int'},
+    'reviews': {'type': 'array'}
+}
 
-dishes = load_data(DISHES_FILE)
-orders = load_data(ORDERS_FILE)
-feedback = load_data(FEEDBACK_FILE)
+orders_schema = {
+    'id': {'type': 'int'},
+    'customer_name': {'type': 'string'},
+    'status': {'type': 'string', 'default': 'received'},
+    'items': {
+        'type': 'list',
+        'schema': {
+            'type': 'dict',
+            'schema': {
+                'dish_id': {'type': 'int'},
+                'dish_name': {'type': 'string'}
+            }
+        }
+    },
+    'total_price': {'type': 'float', 'nullable': True}
+}
 
-order_id_counter = max(order['id'] for order in orders if 'id' in order) if orders else 0
+def validate_data(data, schema):
+    # Function to validate data against the given schema
+    # You can use a library like 'cerberus' for schema validation
+    pass
 
 def get_next_order_id():
-    global order_id_counter
-    order_id_counter += 1
-    return order_id_counter
+    # Function to get the next order ID
+    # You can modify this function based on your requirements
+    max_id = orders_collection.find_one(sort=[('id', -1)])
+    return max_id['id'] + 1 if max_id else 1
 
 def get_dish_by_id(dish_id):
-    return next((dish for dish in dishes if dish['id'] == dish_id), None)
+    # Function to get a dish by its ID
+    dish = dishes_collection.find_one({'id': dish_id})
+    return dish
 
 @app.route('/dishes', methods=['GET'])
 def get_dishes():
-    return jsonify(dishes)
+    dishes = list(dishes_collection.find())
+    return dumps(dishes)
 
 @app.route('/dishes/<int:dish_id>', methods=['GET'])
 def get_dish(dish_id):
     dish = get_dish_by_id(dish_id)
     if dish:
-        return jsonify(dish)
+        return dumps(dish)
     else:
         return jsonify({'error': 'Dish not found'}), 404
 
 @app.route('/dishes', methods=['POST'])
 def create_dish():
-    new_dish = {
-        'id': get_next_order_id(),
-        'name': request.json['name'],
-        'price': request.json['price'],
-        'availability': bool(request.json['availability']),
+    data = request.json
+    validate_data(data, dishes_schema)
+    dish = {
+        'id': data['id'],
+        'name': data['name'],
+        'price': data['price'],
+        'availability': data['availability'],
         'rating': 0,
         'reviews': []
     }
-    dishes.append(new_dish)
-    save_data(dishes, DISHES_FILE)
-    return jsonify(new_dish), 201
+    dishes_collection.insert_one(dish)
+    return dumps(dish), 201
 
 @app.route('/dishes/<int:dish_id>', methods=['PUT'])
 def update_dish(dish_id):
+    data = request.json
+    validate_data(data, dishes_schema)
     dish = get_dish_by_id(dish_id)
     if dish:
-        dish['name'] = request.json.get('name', dish['name'])
-        dish['price'] = request.json.get('price', dish['price'])
-        dish['availability'] = bool(request.json.get('availability', dish['availability']))
-        save_data(dishes, DISHES_FILE)
-        return jsonify(dish)
+        dish['name'] = data.get('name', dish['name'])
+        dish['price'] = data.get('price', dish['price'])
+        dish['availability'] = data.get('availability', dish['availability'])
+        dishes_collection.update_one({'id': dish_id}, {'$set': dish})
+        return dumps(dish)
     else:
         return jsonify({'error': 'Dish not found'}), 404
 
@@ -80,84 +105,46 @@ def update_dish(dish_id):
 def delete_dish(dish_id):
     dish = get_dish_by_id(dish_id)
     if dish:
-        dishes.remove(dish)
-        save_data(dishes, DISHES_FILE)
+        dishes_collection.delete_one({'id': dish_id})
         return jsonify({'message': 'Dish deleted'})
     else:
         return jsonify({'error': 'Dish not found'}), 404
 
 @app.route('/orders', methods=['POST'])
 def create_order():
-    try:
-        # Retrieve the request data
-        data = request.get_json()
-
-        # Add an ID to the new order
-        order_id = get_next_order_id()
-        data['id'] = order_id
-
-        # Set the default status to "received"
-        data['status'] = 'received'
-
-        # Calculate total price for the order
-        total_price = 0
-        for item in data['items']:
-            dish = get_dish_by_id(item['dish_id'])
-            if dish:
-                total_price += dish['price'] * item['quantity']
-        
-        data['total_price'] = total_price
-
-        # Add the new order to the orders list
-        orders.append(data)
-        
-        # Save the updated orders to file
-        save_data(orders, ORDERS_FILE)
-
-        return jsonify({'message': 'Order created successfully', 'order_id': order_id}), 201
-    except Exception as e:
-        return jsonify({'error': 'Internal Server Error'})
-
+    data = request.json
+    validate_data(data, orders_schema)
+    order_id = get_next_order_id()
+    data['id'] = order_id
+    data['status'] = 'received'
+    total_price = 0
+    for item in data['items']:
+        dish = get_dish_by_id(item['dish_id'])
+        if dish:
+            total_price += dish['price'] * item['quantity']
+    data['total_price'] = total_price
+    orders_collection.insert_one(data)
+    return jsonify({'message': 'Order created successfully', 'order_id': order_id}), 201
 
 @app.route('/orders/<int:order_id>', methods=['PUT'])
 def update_order(order_id):
     new_status = request.json.get('status', '')
-    order = next((order for order in orders if order['id'] == order_id), None)
+    order = orders_collection.find_one({'id': order_id})
     if order:
         order['status'] = new_status
-        save_data(orders, ORDERS_FILE)
-
-        # Emit a status update event to the clients
-        socketio.emit('order_status_update', {'order_id': order_id, 'status': new_status}, namespace='/status_updates')
-
-        return jsonify(order)
+        orders_collection.update_one({'id': order_id}, {'$set': order})
+        return dumps(order)
     else:
         return jsonify({'error': 'Order not found'}), 404
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
-    try:
-        # Retrieve orders from the file
-        orders = load_data(ORDERS_FILE)
-
-        # Check if a status filter is provided in the query parameters
-        status = request.args.get('status')
-        if status:
-            filtered_orders = [order for order in orders if order['status'] == status]
-        else:
-            filtered_orders = orders
-
-        return jsonify(filtered_orders)
-    except Exception as e:
-        return jsonify({'error': 'Internal Server Error'})
-
-@socketio.on('connect', namespace='/status_updates')
-def handle_status_update_connection():
-    print('Client connected')
-
-@socketio.on('disconnect', namespace='/status_updates')
-def handle_status_update_disconnection():
-    print('Client disconnected')
+    status = request.args.get('status')
+    if status:
+        orders = list(orders_collection.find({'status': status}))
+    else:
+        orders = list(orders_collection.find())
+    return dumps(orders)
 
 if __name__ == '__main__':
-    socketio.run(app, port=5000, debug=True)
+    app.run(port=5000, debug=True)
