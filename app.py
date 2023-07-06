@@ -5,25 +5,23 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import json_util
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'Kirti@1807'
 
 # MongoDB configuration
-cluster0 = MongoClient('mongodb+srv://kirti:kirti@cluster0.xxyu7.mongodb.net/?retryWrites=true&w=majority')
-db = cluster['zomato']
-collection = db['dishes']
-collection = db['orders']
-
+cluster0 = MongoClient('mongodb+srv://kirti:kirti@cluster0.xxyu7.mongodb.net/zomato?retryWrites=true&w=majority')
+db = cluster0['zomato']
+dishes_collection = db['dishes']
+orders_collection = db['orders']
 # Schema definitions
 dishes_schema = {
     'id': {'type': 'int'},
     'name': {'type': 'string'},
     'price': {'type': 'float'},
-    'availability': {'type': 'bool'},
-    'rating': {'type': 'int'},
-    'reviews': {'type': 'array'}
+    'availability': {'type': 'bool'}
 }
 
 orders_schema = {
@@ -62,30 +60,39 @@ def get_dish_by_id(dish_id):
 @app.route('/dishes', methods=['GET'])
 def get_dishes():
     dishes = list(dishes_collection.find())
-    return dumps(dishes)
+    return json_util.dumps(dishes)
+
 
 @app.route('/dishes/<int:dish_id>', methods=['GET'])
 def get_dish(dish_id):
     dish = get_dish_by_id(dish_id)
     if dish:
-        return dumps(dish)
+        return json_util.dumps(dish)
     else:
         return jsonify({'error': 'Dish not found'}), 404
+
 
 @app.route('/dishes', methods=['POST'])
 def create_dish():
     data = request.json
     validate_data(data, dishes_schema)
+
+    # Get the highest ID value from the dishes collection
+    max_id = dishes_collection.find_one(sort=[('id', -1)])
+    new_id = max_id['id'] + 1 if max_id else 1
+
     dish = {
-        'id': data['id'],
+        'id': new_id,
         'name': data['name'],
         'price': data['price'],
         'availability': data['availability'],
-        'rating': 0,
-        'reviews': []
     }
-    dishes_collection.insert_one(dish)
-    return dumps(dish), 201
+
+    result = dishes_collection.insert_one(dish)
+    inserted_id = str(result.inserted_id)
+    dish['_id'] = inserted_id
+    return jsonify(dish), 201
+
 
 @app.route('/dishes/<int:dish_id>', methods=['PUT'])
 def update_dish(dish_id):
@@ -106,9 +113,9 @@ def delete_dish(dish_id):
     dish = get_dish_by_id(dish_id)
     if dish:
         dishes_collection.delete_one({'id': dish_id})
-        return jsonify({'message': 'Dish deleted'})
-    else:
-        return jsonify({'error': 'Dish not found'}), 404
+        return jsonify({'message': 'Dish deleted', 'dish_id': dish_id})
+
+    return jsonify({'error': 'Dish not found'}), 404
 
 @app.route('/orders', methods=['POST'])
 def create_order():
@@ -144,7 +151,8 @@ def get_orders():
         orders = list(orders_collection.find({'status': status}))
     else:
         orders = list(orders_collection.find())
-    return dumps(orders)
+    return json_util.dumps(orders)
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
