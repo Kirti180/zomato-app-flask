@@ -3,6 +3,7 @@ import pymongo
 from json import dumps
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from bson import ObjectId
 from pymongo import MongoClient
 from bson import json_util
 from bson.objectid import ObjectId
@@ -94,19 +95,37 @@ def create_dish():
     return jsonify(dish), 201
 
 
-@app.route('/dishes/<int:dish_id>', methods=['PUT'])
+
+from bson import ObjectId
+
+@app.route('/dishes/<string:dish_id>', methods=['PUT'])
 def update_dish(dish_id):
     data = request.json
     validate_data(data, dishes_schema)
-    dish = get_dish_by_id(dish_id)
+    
+    # Convert dish_id to ObjectId if it's a valid ObjectId string
+    try:
+        object_id = ObjectId(dish_id)
+    except bson.errors.InvalidId:
+        return jsonify({'error': 'Invalid dish ID'}), 400
+
+    # Find the dish based on the ObjectId
+    dish = get_dish_by_id(object_id)
+    
     if dish:
         dish['name'] = data.get('name', dish['name'])
         dish['price'] = data.get('price', dish['price'])
         dish['availability'] = data.get('availability', dish['availability'])
-        dishes_collection.update_one({'id': dish_id}, {'$set': dish})
-        return dumps(dish)
+        dishes_collection.update_one({'_id': object_id}, {'$set': dish})
+        dish['_id'] = str(dish['_id'])  # Convert ObjectId to string
+        return jsonify(dish)
     else:
         return jsonify({'error': 'Dish not found'}), 404
+
+
+
+
+
 
 @app.route('/dishes/<int:dish_id>', methods=['DELETE'])
 def delete_dish(dish_id):
@@ -140,9 +159,10 @@ def update_order(order_id):
     if order:
         order['status'] = new_status
         orders_collection.update_one({'id': order_id}, {'$set': order})
-        return dumps(order)
+        return jsonify(order)
     else:
         return jsonify({'error': 'Order not found'}), 404
+
 
 @app.route('/orders', methods=['GET'])
 def get_orders():

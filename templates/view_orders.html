@@ -48,6 +48,42 @@
         th {
             background-color: #f2f2f2;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -70,32 +106,96 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Modal HTML -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Update Order Status</h2>
+            <form id="statusForm">
+                <input type="radio" id="delivered" name="status" value="Delivered">
+                <label for="delivered">Delivered</label><br>
+                <input type="radio" id="pending" name="status" value="Pending">
+                <label for="pending">Pending</label><br>
+                <input type="radio" id="inProcess" name="status" value="In Process">
+                <label for="inProcess">In Process</label><br>
+                <button type="submit">Update</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch all orders
+        function fetchOrders() {
+            fetch('http://localhost:5000/orders')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('tbody');
+
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${order.id}</td>
+                            <td>${order.customer_name}</td>
+                            <td>${order.total_price}</td>
+                            <td id="status-${order.id}">${order.status}</td>
+                            <td><button onclick="openModal(${order.id})">Update Status</button></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.log(error));
+        }
+
+        // Function to update the order status in the table
+        function updateOrderStatus(orderId, status) {
+            const statusCell = document.getElementById(`status-${orderId}`);
+            statusCell.textContent = status;
+        }
+
+        // Function to open the modal and populate with content
+        function openModal(orderId) {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'block';
+
+            // Close modal when the 'x' button is clicked
+            const closeBtn = document.getElementsByClassName('close')[0];
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+
+            // Handle form submission to update the status
+            const statusForm = document.getElementById('statusForm');
+            statusForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const selectedStatus = document.querySelector('input[name="status"]:checked').value;
+
+                // Send the updated status to the server
+                const updateUrl = `http://localhost:5000/orders/${orderId}`;
+                const updateData = { status: selectedStatus };
+
+                fetch(updateUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Status updated successfully:', data);
+                        // Update the order status in the table
+                        updateOrderStatus(orderId, selectedStatus);
+                    })
+                    .catch(error => console.log(error));
+
+                modal.style.display = 'none';
+            });
+            
+        }
+
+        // Call the fetchOrders function to populate the table on page load
+        fetchOrders();
+    </script>
 </body>
 </html>
-<script>
-    // Function to fetch all orders
-function fetchOrders() {
-    fetch('http://localhost:5000/orders')
-        .then(response => response.json())
-        .then(data => {
-            const tableBody = document.querySelector('tbody');
-
-            data.forEach(order => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${order.id}</td>
-                    <td>${order.customer_name}</td>
-                    <td>${order.total_price}</td>
-                    <td>${order.status}</td>
-                    <td><button>Update Status</button></td>
-                `;
-                tableBody.appendChild(row);
-            });
-        })
-        .catch(error => console.log(error));
-}
-
-// Call the fetchOrders function to populate the table on page load
-fetchOrders();
-
-</script>
