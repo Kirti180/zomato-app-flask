@@ -3,12 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DishesService {
   private baseUrl = 'http://localhost:5000/dishes'; // Replace with your backend API URL
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   getDishes(): Observable<any[]> {
     return this.http.get<any[]>(this.baseUrl);
