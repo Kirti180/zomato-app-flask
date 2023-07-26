@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class DishesService {
-  private baseUrl = 'http://localhost:5000/dishes'; // Replace with your backend API URL
+  private baseUrl = 'https://zomato-dugp.onrender.com/dishes'; // Replace with your backend API URL
 
   constructor(private http: HttpClient) {}
 

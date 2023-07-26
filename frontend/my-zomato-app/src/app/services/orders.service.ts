@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class OrdersService {
-  private apiUrl = 'http://localhost:5000/orders'; // Update with your API URL
+  private apiUrl = 'https://zomato-dugp.onrender.com/orders'; // Update with your API URL
 
   constructor(private http: HttpClient) { }
 
