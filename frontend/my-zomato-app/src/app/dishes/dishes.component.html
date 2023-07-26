@@ -1,0 +1,78 @@
+<h1 style="color: #f2be22;">Update Dishes</h1>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Availability</th>
+        <th>Actions</th>
+        <th>Update</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let dish of dishes">
+        <td>{{ dish.name }}</td>
+        <td>{{ dish.price }}</td>
+        <td>{{ dish.availability ? 'Available' : 'Not Available' }}</td>
+        <td>
+          <button (click)="deleteDish(dish.id)">Delete</button>
+        </td>
+        <td>
+          <button (click)="updateDish(dish)">Update</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal" *ngIf="isModalOpen">
+  <div class="modal-content">
+    <h2>Update Dish</h2>
+    <form (ngSubmit)="saveChanges()" #updateForm="ngForm">
+      <div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" [(ngModel)]="selectedDish.name" required>
+      </div>
+      <div>
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price" [(ngModel)]="selectedDish.price" required>
+      </div>
+      <div>
+        <label for="availability">Availability:</label>
+        <select id="availability" name="availability" [(ngModel)]="selectedDish.availability" required>
+          <option value="true">Available</option>
+          <option value="false">Not Available</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="submit">Save Changes</button>
+        <button type="button" (click)="closeModal()">Close</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  
+
+<h1 style="color: #f2be22;">Create New Dish</h1>
+
+<form (ngSubmit)="createDish(dishForm)" #dishForm="ngForm" >
+  <div>
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" [(ngModel)]="newDish.name" required>
+  </div>
+  <div>
+    <label for="price">Price:</label>
+    <input type="number" id="price" name="price" [(ngModel)]="newDish.price" required>
+  </div>
+  <div>
+    <label for="availability" style="margin-left: 8%;">Availability:</label>
+    <select id="availability" name="availability" [(ngModel)]="newDish.availability" required>
+      <option value="true">Available</option>
+      <option value="false">Not Available</option>
+    </select>
+  </div>
+  <button type="submit">Create</button>
+</form>

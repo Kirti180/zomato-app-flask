@@ -1,0 +1,90 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
+body, html {
+  height: 100%;
+}
+
+body {
+  text-align: center;
+  background-attachment: fixed;
+  background-image: url('../assets/Untitled.jpeg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding-top: 6%;
+  width: 100%;
+  padding-bottom: 10%;
+}
+
+header {
+  background-color: #f0ab35;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+  overflow: hidden; /* Add this to prevent content overflow */
+}
+
+.navbar {
+  width: 100%;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #000;
+}
+
+.navbar-logo img {
+  height: 40px;
+  width: auto;
+}
+
+.navbar-links {
+  width: 30%;
+}
+
+.navbar-links a {
+  margin-right: 10px;
+  color: #000;
+  text-decoration: none;
+  font-size: 24px;
+}
+
+.navbar-links a:hover {
+  text-decoration: underline;
+}
+
+.active {
+  font-weight: bold;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  min-height: calc(100vh - 50px); /* Use min-height instead of height */
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  .navbar-links {
+    width: 50%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .navbar-links {
+    width: 70%;
+  }
+  .navbar-links a {
+    font-size: 20px;
+  }
+}

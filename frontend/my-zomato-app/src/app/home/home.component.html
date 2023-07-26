@@ -1,0 +1,9 @@
+
+
+<div class="food-items">
+  <div *ngFor="let foodItem of foodItems" class="food-item">
+    <img [src]="foodItem.image" alt="Food Item">
+    <h3>{{ foodItem.name }}</h3>
+    <p>{{ foodItem.description }}</p>
+  </div>
+</div>
